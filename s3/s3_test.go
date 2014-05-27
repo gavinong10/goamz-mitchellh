@@ -149,6 +149,25 @@ func (s *S) TestGetReader(c *C) {
 	c.Assert(req.Header["Date"], Not(Equals), "")
 }
 
+func (s *S) TestGetResponseRange(c *C) {
+	testServer.Response(206, nil, "0123456789")
+	b := s.s3.Bucket("bucket")
+	resp, err := b.GetResponseRange("name", &s3.Range{0, 9})
+	c.Assert(err, IsNil)
+	c.Assert(resp, NotNil)
+
+	data, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	c.Assert(err, IsNil)
+	c.Assert(string(data), Equals, "0123456789")
+
+	req := testServer.WaitRequest()
+	c.Assert(req.Method, Equals, "GET")
+	c.Assert(req.URL.Path, Equals, "/bucket/name")
+	c.Assert(req.Header.Get("Date"), Not(Equals), "")
+	c.Assert(req.Header.Get("Range"), Equals, "bytes=0-9")
+}
+
 func (s *S) TestGetNotFound(c *C) {
 	for i := 0; i < 10; i++ {
 		testServer.Response(404, nil, GetObjectErrorDump)
