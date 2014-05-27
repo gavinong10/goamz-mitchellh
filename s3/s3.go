@@ -189,10 +189,24 @@ func (b *Bucket) GetReader(path string) (rc io.ReadCloser, err error) {
 // It is the caller's responsibility to call Close on rc when
 // finished reading.
 func (b *Bucket) GetResponse(path string) (*http.Response, error) {
+	return b.GetResponseRange(path, nil)
+}
+
+type Range struct {
+	FirstByte, LastByte int64
+}
+
+func (b *Bucket) GetResponseRange(path string, rang *Range) (*http.Response, error) {
 	req := &request{
 		bucket: b.Name,
 		path:   path,
 	}
+
+	if rang != nil {
+		req.headers = make(http.Header)
+		req.headers.Set("Range", fmt.Sprintf("bytes=%d-%d", rang.FirstByte, rang.LastByte))
+	}
+
 	err := b.S3.prepare(req)
 	if err != nil {
 		return nil, err
@@ -690,7 +704,7 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 		dump, _ := httputil.DumpResponse(hresp, true)
 		log.Printf("} -> %s\n", dump)
 	}
-	if hresp.StatusCode != 200 && hresp.StatusCode != 204 {
+	if hresp.StatusCode != 200 && hresp.StatusCode != 204 && hresp.StatusCode != 206 {
 		defer hresp.Body.Close()
 		return nil, buildError(hresp)
 	}
