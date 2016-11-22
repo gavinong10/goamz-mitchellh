@@ -16,7 +16,6 @@ import (
 	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"github.com/mitchellh/goamz/aws"
 	"io"
 	"io/ioutil"
 	"log"
@@ -27,6 +26,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/goamz/aws"
 )
 
 const debug = false
@@ -35,6 +36,7 @@ const debug = false
 type S3 struct {
 	aws.Auth
 	aws.Region
+	signer  *V4Signer
 	private byte // Reserve the right of using private data.
 }
 
@@ -58,7 +60,13 @@ var attempts = aws.AttemptStrategy{
 
 // New creates a new S3.
 func New(auth aws.Auth, region aws.Region) *S3 {
-	return &S3{auth, region, 0}
+	s3 := &S3{
+		Auth:    auth,
+		Region:  region,
+		signer:  NewV4Signer(auth, "s3", region),
+		private: 0}
+	s3.signer.IncludeXAmzContentSha256 = true
+	return s3
 }
 
 // Bucket returns a Bucket with the given name.
@@ -662,7 +670,7 @@ func (s3 *S3) prepare(req *request) error {
 	}
 	req.headers["Host"] = []string{u.Host}
 	req.headers["Date"] = []string{time.Now().In(time.UTC).Format(time.RFC1123)}
-	sign(s3.Auth, req.method, req.signpath, req.params, req.headers)
+
 	return nil
 }
 
@@ -695,6 +703,9 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 	if req.payload != nil {
 		hreq.Body = ioutil.NopCloser(req.payload)
 	}
+
+	hreq.Host = s3.Region.S3Endpoint[len("https://"):]
+	s3.signer.Sign(&hreq)
 
 	hresp, err := http.DefaultClient.Do(&hreq)
 	if err != nil {
