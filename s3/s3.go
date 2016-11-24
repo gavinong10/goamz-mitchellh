@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -704,8 +705,13 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 		hreq.Body = ioutil.NopCloser(req.payload)
 	}
 
+	fmt.Println("Body is: ", hreq.Body)
 	hreq.Host = s3.Region.S3Endpoint[len("https://"):]
 	s3.signer.Sign(&hreq)
+
+	b, err := json.MarshalIndent(hreq.Header, "", "  ")
+	fmt.Println(string(b))
+	fmt.Println(hreq)
 
 	hresp, err := http.DefaultClient.Do(&hreq)
 	if err != nil {

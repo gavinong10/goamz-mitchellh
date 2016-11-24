@@ -8,13 +8,14 @@ import (
 	"net/http"
 	"strings"
 
+	"net"
+	"sort"
+	"time"
+
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
 	"github.com/mitchellh/goamz/testutil"
 	. "github.com/motain/gocheck"
-	"net"
-	"sort"
-	"time"
 )
 
 // AmazonServer represents an Amazon S3 server.
@@ -30,9 +31,10 @@ func (s *AmazonServer) SetUp(c *C) {
 	s.auth = auth
 }
 
-var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
-var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
-var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
+//var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
+//var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
+//var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
 
 // AmazonClientSuite tests the client against a live S3 server.
 type AmazonClientSuite struct {

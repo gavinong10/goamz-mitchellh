@@ -69,6 +69,12 @@ func (s *V4Signer) Sign(req *http.Request) {
 	signature := s.signature(t, sts)                  // Calculate the AWS Signature Version 4
 	auth := s.authorization(req.Header, t, signature) // Create Authorization header value
 	req.Header.Set("Authorization", auth)             // Add Authorization header to request
+
+	//req.Header.Del("Authorization")
+	//req.Header.Del("Date")
+	//req.Header.Del("Host")
+	//req.Header.Del("X-Amz-Content-Sha256")
+	//req.Header.Del("X-Amz-Date")
 	return
 }
 
