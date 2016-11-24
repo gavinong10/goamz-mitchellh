@@ -707,6 +707,7 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 
 	fmt.Println("Body is: ", hreq.Body)
 	hreq.Host = s3.Region.S3Endpoint[len("https://"):]
+
 	s3.signer.Sign(&hreq)
 
 	b, err := json.MarshalIndent(hreq.Header, "", "  ")
@@ -714,6 +715,8 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 	fmt.Println(hreq)
 
 	hresp, err := http.DefaultClient.Do(&hreq)
+
+	fmt.Printf("\nResponse: %#v", hresp)
 	if err != nil {
 		return nil, err
 	}
