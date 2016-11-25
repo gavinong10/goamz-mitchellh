@@ -14,7 +14,6 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -114,11 +113,11 @@ type ListBucketsResp struct {
 //
 // See: http://goo.gl/NqlyMN
 func (s3 *S3) ListBuckets() (result *ListBucketsResp, err error) {
-	req := &request{
-		path: "/",
-	}
 	result = &ListBucketsResp{}
 	for attempt := attempts.Start(); attempt.Next(); {
+		req := &request{
+			path: "/",
+		}
 		err = s3.query(req, result)
 		if !shouldRetry(err) {
 			break
@@ -156,12 +155,12 @@ func (b *Bucket) PutBucket(perm ACL) error {
 //
 // See http://goo.gl/GoBrY for details.
 func (b *Bucket) DelBucket() (err error) {
-	req := &request{
-		method: "DELETE",
-		bucket: b.Name,
-		path:   "/",
-	}
 	for attempt := attempts.Start(); attempt.Next(); {
+		req := &request{
+			method: "DELETE",
+			bucket: b.Name,
+			path:   "/",
+		}
 		err = b.S3.query(req, nil)
 		if !shouldRetry(err) {
 			break
@@ -206,21 +205,21 @@ type Range struct {
 }
 
 func (b *Bucket) GetResponseRange(path string, rang *Range) (*http.Response, error) {
-	req := &request{
-		bucket: b.Name,
-		path:   path,
-	}
-
-	if rang != nil {
-		req.headers = make(http.Header)
-		req.headers.Set("Range", fmt.Sprintf("bytes=%d-%d", rang.FirstByte, rang.LastByte))
-	}
-
-	err := b.S3.prepare(req)
-	if err != nil {
-		return nil, err
-	}
 	for attempt := attempts.Start(); attempt.Next(); {
+		req := &request{
+			bucket: b.Name,
+			path:   path,
+		}
+
+		if rang != nil {
+			req.headers = make(http.Header)
+			req.headers.Set("Range", fmt.Sprintf("bytes=%d-%d", rang.FirstByte, rang.LastByte))
+		}
+
+		err := b.S3.prepare(req)
+		if err != nil {
+			return nil, err
+		}
 		resp, err := b.S3.run(req, nil)
 		if shouldRetry(err) && attempt.HasNext() {
 			continue
@@ -444,12 +443,12 @@ func (b *Bucket) List(prefix, delim, marker string, max int) (result *ListResp, 
 	if max != 0 {
 		params["max-keys"] = []string{strconv.FormatInt(int64(max), 10)}
 	}
-	req := &request{
-		bucket: b.Name,
-		params: params,
-	}
 	result = &ListResp{}
 	for attempt := attempts.Start(); attempt.Next(); {
+		req := &request{
+			bucket: b.Name,
+			params: params,
+		}
 		err = b.S3.query(req, result)
 		if !shouldRetry(err) {
 			break
@@ -496,17 +495,17 @@ func (b *Bucket) GetBucketContents() (*map[string]Key, error) {
 
 // Get metadata from the key without returning the key content
 func (b *Bucket) GetKey(path string) (*Key, error) {
-	req := &request{
-		bucket: b.Name,
-		path:   path,
-		method: "HEAD",
-	}
-	err := b.S3.prepare(req)
-	if err != nil {
-		return nil, err
-	}
 	key := &Key{}
 	for attempt := attempts.Start(); attempt.Next(); {
+		req := &request{
+			bucket: b.Name,
+			path:   path,
+			method: "HEAD",
+		}
+		err := b.S3.prepare(req)
+		if err != nil {
+			return nil, err
+		}
 		resp, err := b.S3.run(req, nil)
 		if shouldRetry(err) && attempt.HasNext() {
 			continue
@@ -705,18 +704,21 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 		hreq.Body = ioutil.NopCloser(req.payload)
 	}
 
-	fmt.Println("Body is: ", hreq.Body)
+	// fmt.Println("Body is: ", hreq.Body)
 	hreq.Host = s3.Region.S3Endpoint[len("https://"):]
 
 	s3.signer.Sign(&hreq)
 
-	b, err := json.MarshalIndent(hreq.Header, "", "  ")
-	fmt.Println(string(b))
-	fmt.Println(hreq)
+	// b, err := json.MarshalIndent(hreq.Header, "", "  ")
+	// fmt.Println(string(b))
+	// fmt.Println(hreq)
+	// fmt.Printf("hreq.URL: %#v\n", hreq.URL.String())
+	// fmt.Printf("hreq.Host: %#v\n", hreq.Host)
+	// fmt.Printf("hreq.Body: %#v\n", hreq.Body)
 
 	hresp, err := http.DefaultClient.Do(&hreq)
 
-	fmt.Printf("\nResponse: %#v", hresp)
+	// fmt.Printf("\nResponse: %#v", hresp)
 	if err != nil {
 		return nil, err
 	}
@@ -776,6 +778,7 @@ func buildError(r *http.Response) error {
 }
 
 func shouldRetry(err error) bool {
+	// fmt.Printf("\n\nerror in shouldRetry: %#v", err)
 	if err == nil {
 		return false
 	}
