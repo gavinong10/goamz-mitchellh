@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
@@ -31,10 +30,10 @@ func (s *AmazonServer) SetUp(c *C) {
 	s.auth = auth
 }
 
-var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
-
+//var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
 //var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
-//var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
+var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
+
 //var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
 
 // AmazonClientSuite tests the client against a live S3 server.
@@ -236,6 +235,7 @@ func (s *ClientTests) TestGetNotFound(c *C) {
 	c.Assert(data, IsNil)
 }
 
+/*
 // Communicate with all endpoints to see if they are alive.
 func (s *ClientTests) TestRegions(c *C) {
 	// Fails on sa-east-1 and ap-southeast-2 -> "InvalidAccessKeyId"
@@ -268,7 +268,7 @@ func (s *ClientTests) TestRegions(c *C) {
 		}
 	}
 }
-
+*/
 var objectNames = []string{
 	"index.html",
 	"index2.html",
