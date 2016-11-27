@@ -5,10 +5,10 @@ import (
 	"crypto/md5"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"net"
 	"net/http"
 	"strings"
-
-	"net"
 	"time"
 
 	"github.com/mitchellh/goamz/aws"
@@ -141,6 +141,8 @@ func killBucket(b *s3.Bucket) {
 	if err != nil {
 		message += ": " + err.Error()
 	}
+	e, _ := err.(*s3.Error)
+	log.Printf("\nError code: %s\n", e.Code)
 	panic(message)
 }
 
