@@ -690,6 +690,7 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 
 	hreq := http.Request{
 		URL:        u,
+		Host:       u.Host,
 		Method:     req.method,
 		ProtoMajor: 1,
 		ProtoMinor: 1,
@@ -706,7 +707,40 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 	}
 
 	// fmt.Println("Body is: ", hreq.Body)
-	hreq.Host = s3.Region.S3Endpoint[len("https://"):]
+	//hreq.Host = s3.Region.S3Endpoint[len("https://"):]
+	//hreq.Host = "goamz-us-east-1-akiajoba.s3.amazonaws.com"
+
+	/*
+			if req.bucket != "" {
+			req.baseurl = s3.Region.S3BucketEndpoint
+			if req.baseurl == "" {
+				// Use the path method to address the bucket.
+				req.baseurl = s3.Region.S3Endpoint
+				req.path = "/" + req.bucket + req.path
+			} else {
+				// Just in case, prevent injection.
+				if strings.IndexAny(req.bucket, "/:@") >= 0 {
+					return fmt.Errorf("bad S3 bucket: %q", req.bucket)
+				}
+				req.baseurl = strings.Replace(req.baseurl, "${bucket}", req.bucket, -1)
+			}
+			req.signpath = "/" + req.bucket + req.signpath
+		} else {
+			req.baseurl = s3.Region.S3Endpoint
+		}
+	*/
+
+	// if s3.Region.S3BucketEndpoint != "" {
+	// 	hreq.Host = s3.Region.S3BucketEndpoint[len("https://"):]
+	// } else {
+	// 	hreq.Host = s3.Region.S3Endpoint[len("https://"):]
+	// }
+	// //req.headers["Host"] = []string{u.Host}
+	// // u, err := url.Parse(req.baseurl)
+	// // if err != nil {
+	// // 	return fmt.Errorf("bad S3 endpoint URL %q: %v", req.baseurl, err)
+	// // }
+	// hreq.Host = u.Host
 
 	s3.signer.Sign(&hreq)
 

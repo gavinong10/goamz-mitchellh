@@ -30,11 +30,10 @@ func (s *AmazonServer) SetUp(c *C) {
 	s.auth = auth
 }
 
-//var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
-//var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
+var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
 var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
-
-//var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
 
 // AmazonClientSuite tests the client against a live S3 server.
 type AmazonClientSuite struct {
