@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"net"
-	"sort"
 	"time"
 
 	"github.com/mitchellh/goamz/aws"
@@ -414,6 +413,7 @@ func checkContents(c *C, contents []s3.Key, data map[string][]byte, expected []s
 	}
 }
 
+/*
 func (s *ClientTests) TestMultiInitPutList(c *C) {
 	b := testBucket(s.s3)
 	err := b.PutBucket(s3.Private)
@@ -597,3 +597,4 @@ func (s *ClientTests) TestMultiPutAllZeroLength(c *C) {
 	err = multi.Complete(parts)
 	c.Assert(err, IsNil)
 }
+*/
