@@ -708,12 +708,14 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 
 	s3.signer.Sign(&hreq)
 
-	b, err := json.MarshalIndent(hreq.Header, "", "  ")
-	fmt.Println(string(b))
-	fmt.Println(hreq)
-	fmt.Printf("hreq.URL: %#v\n", hreq.URL.String())
-	fmt.Printf("hreq.Host: %#v\n", hreq.Host)
-	fmt.Printf("hreq.Body: %#v\n", hreq.Body)
+	if s3.Region.Name == "cn-north-1" {
+		b, _ := json.MarshalIndent(hreq.Header, "", "  ")
+		fmt.Println(string(b))
+		fmt.Println(hreq)
+		fmt.Printf("hreq.URL: %#v\n", hreq.URL.String())
+		fmt.Printf("hreq.Host: %#v\n", hreq.Host)
+		fmt.Printf("hreq.Body: %#v\n", hreq.Body)
+	}
 
 	hresp, err := http.DefaultClient.Do(&hreq)
 

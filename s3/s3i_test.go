@@ -31,9 +31,10 @@ func (s *AmazonServer) SetUp(c *C) {
 }
 
 var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
-var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
-var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
-var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
+
+// var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
+// var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
+// var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
 
 // AmazonClientSuite tests the client against a live S3 server.
 type AmazonClientSuite struct {
@@ -243,21 +244,30 @@ func (s *ClientTests) TestRegions(c *C) {
 	// -> 20 second delay between runs: cn-north-1 and us-gov-west-1 error
 	errs := make(chan error, len(aws.Regions))
 	for _, region := range aws.Regions {
+		// if region.Name != "cn-north-1" {
+		// 	continue
+		// }
 		go func(r aws.Region) {
 			s := s3.New(s.s3.Auth, r)
 			b := testBucket(s)
 			_, err := b.Get("non-existent")
 			errs <- err
 		}(region)
-		time.Sleep(20 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
-	for _ = range aws.Regions {
+	for _, region := range aws.Regions {
+		// if region.Name != "cn-north-1" {
+		// 	continue
+		// }
 		err := <-errs
 		if err != nil {
 			s3_err, ok := err.(*s3.Error)
 			if ok {
-				c.Check(s3_err.Code, Matches, "NoSuchBucket")
-
+				check := c.Check(s3_err.Code, Matches, "NoSuchBucket")
+				if !check {
+					log.Println("################################")
+					log.Printf("\nCheck Region Failed: %s\n\n\n", region.Name)
+				}
 			} else if _, ok = err.(*net.DNSError); ok {
 				// Okay as well.
 			} else {
