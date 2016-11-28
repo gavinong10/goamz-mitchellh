@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -70,6 +71,7 @@ func (s *V4Signer) Sign(req *http.Request) {
 	auth := s.authorization(req.Header, t, signature) // Create Authorization header value
 	req.Header.Set("Authorization", auth)             // Add Authorization header to request
 
+	log.Println("\nAuth: ", auth)
 	//req.Header.Del("Authorization")
 	//req.Header.Del("Date")
 	//req.Header.Del("Host")

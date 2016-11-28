@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
 	"strings"
@@ -32,10 +31,9 @@ func (s *AmazonServer) SetUp(c *C) {
 }
 
 var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
-
-// var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
-// var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
-// var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
+var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
 
 // AmazonClientSuite tests the client against a live S3 server.
 type AmazonClientSuite struct {
@@ -240,17 +238,18 @@ func (s *ClientTests) TestGetNotFound(c *C) {
 
 // Communicate with all endpoints to see if they are alive.
 func (s *ClientTests) TestRegions(c *C) {
-	// Fails on sa-east-1 and ap-southeast-2 -> "InvalidAccessKeyId"
+	// "InvalidAccessKeyId" error currently occurs sporadically:
+	// -> 0 second delay between runs: ap-northeast-1 and ap-southeast-2 error
+	// -> 20 second delay between runs: cn-north-1 and us-gov-west-1 error
 	errs := make(chan error, len(aws.Regions))
 	for _, region := range aws.Regions {
 		go func(r aws.Region) {
 			s := s3.New(s.s3.Auth, r)
-			lowerAccessKey := strings.ToLower(s.Auth.AccessKey) + string(rand.Intn(1000))
-			b := s.Bucket("goamz-" + lowerAccessKey)
-			log.Println("\ngoamz-" + lowerAccessKey)
+			b := testBucket(s)
 			_, err := b.Get("non-existent")
 			errs <- err
 		}(region)
+		time.Sleep(20 * time.Second)
 	}
 	for _, region := range aws.Regions {
 		err := <-errs
