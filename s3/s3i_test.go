@@ -251,17 +251,13 @@ func (s *ClientTests) TestRegions(c *C) {
 		}(region)
 		time.Sleep(20 * time.Second)
 	}
-	for _, region := range aws.Regions {
+	for _ = range aws.Regions {
 		err := <-errs
 		if err != nil {
 			s3_err, ok := err.(*s3.Error)
 			if ok {
-				check := c.Check(s3_err.Code, Matches, "NoSuchBucket")
-				if !check {
-					log.Println("\n##############", region, "\n")
-				} else {
-					log.Println("\n", region, "\n")
-				}
+				c.Check(s3_err.Code, Matches, "NoSuchBucket")
+
 			} else if _, ok = err.(*net.DNSError); ok {
 				// Okay as well.
 			} else {
