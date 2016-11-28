@@ -38,6 +38,7 @@ type S3 struct {
 	aws.Region
 	signer  *V4Signer
 	private byte // Reserve the right of using private data.
+	v4sign  bool
 }
 
 // The Bucket type encapsulates operations with an S3 bucket.
@@ -64,8 +65,15 @@ func New(auth aws.Auth, region aws.Region) *S3 {
 		Auth:    auth,
 		Region:  region,
 		signer:  NewV4Signer(auth, "s3", region),
-		private: 0}
+		private: 0,
+		v4sign:  false}
 	s3.signer.IncludeXAmzContentSha256 = true
+	return s3
+}
+
+func NewV4(auth aws.Auth, region aws.Region) *S3 {
+	s3 := New(auth, region)
+	s3.v4sign = true
 	return s3
 }
 
@@ -671,6 +679,10 @@ func (s3 *S3) prepare(req *request) error {
 	req.headers["Host"] = []string{u.Host}
 	req.headers["Date"] = []string{time.Now().In(time.UTC).Format(time.RFC1123)}
 
+	if !s3.v4sign {
+		sign(s3.Auth, req.method, req.signpath, req.params, req.headers)
+	}
+
 	return nil
 }
 
@@ -705,7 +717,9 @@ func (s3 *S3) run(req *request, resp interface{}) (*http.Response, error) {
 		hreq.Body = ioutil.NopCloser(req.payload)
 	}
 
-	s3.signer.Sign(&hreq)
+	if s3.v4sign {
+		s3.signer.Sign(&hreq)
+	}
 
 	hresp, err := http.DefaultClient.Do(&hreq)
 

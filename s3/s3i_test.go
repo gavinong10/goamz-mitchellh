@@ -33,13 +33,18 @@ func (s *AmazonServer) SetUp(c *C) {
 var _ = Suite(&AmazonClientSuite{Region: aws.USEast})
 var _ = Suite(&AmazonClientSuite{Region: aws.EUWest})
 var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast})
-var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral})
+
+var _ = Suite(&AmazonClientSuite{Region: aws.USEast, isV4: true})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUWest, isV4: true})
+var _ = Suite(&AmazonDomainClientSuite{Region: aws.USEast, isV4: true})
+var _ = Suite(&AmazonClientSuite{Region: aws.EUCentral, isV4: true})
 
 // AmazonClientSuite tests the client against a live S3 server.
 type AmazonClientSuite struct {
 	aws.Region
 	srv AmazonServer
 	ClientTests
+	isV4 bool
 }
 
 func (s *AmazonClientSuite) SetUpSuite(c *C) {
@@ -47,7 +52,11 @@ func (s *AmazonClientSuite) SetUpSuite(c *C) {
 		c.Skip("live tests against AWS disabled (no -amazon)")
 	}
 	s.srv.SetUp(c)
-	s.s3 = s3.New(s.srv.auth, s.Region)
+	if s.isV4 {
+		s.s3 = s3.NewV4(s.srv.auth, s.Region)
+	} else {
+		s.s3 = s3.New(s.srv.auth, s.Region)
+	}
 	// In case tests were interrupted in the middle before.
 	s.ClientTests.Cleanup()
 }
@@ -63,6 +72,7 @@ type AmazonDomainClientSuite struct {
 	aws.Region
 	srv AmazonServer
 	ClientTests
+	isV4 bool
 }
 
 func (s *AmazonDomainClientSuite) SetUpSuite(c *C) {
@@ -72,7 +82,11 @@ func (s *AmazonDomainClientSuite) SetUpSuite(c *C) {
 	s.srv.SetUp(c)
 	region := s.Region
 	region.S3BucketEndpoint = "https://${bucket}.s3.amazonaws.com"
-	s.s3 = s3.New(s.srv.auth, region)
+	if s.isV4 {
+		s.s3 = s3.NewV4(s.srv.auth, s.Region)
+	} else {
+		s.s3 = s3.New(s.srv.auth, s.Region)
+	}
 	s.ClientTests.Cleanup()
 }
 
@@ -241,8 +255,42 @@ func (s *ClientTests) TestRegions(c *C) {
 	// "InvalidAccessKeyId" fails with cn-north-1 and us-gov-west-1
 	errs := make(chan error, len(aws.Regions))
 	for _, region := range aws.Regions {
+		if region.Name == "eu-central-1" {
+			continue // this is for V4 signing only
+		}
 		go func(r aws.Region) {
 			s := s3.New(s.s3.Auth, r)
+			b := testBucket(s)
+			_, err := b.Get("non-existent")
+			errs <- err
+		}(region)
+	}
+	for _, region := range aws.Regions {
+		if region.Name == "eu-central-1" {
+			continue // this is for V4 signing only
+		}
+		err := <-errs
+		if err != nil {
+			s3_err, ok := err.(*s3.Error)
+			if ok {
+				c.Check(s3_err.Code, Matches, "NoSuchBucket")
+			} else if _, ok = err.(*net.DNSError); ok {
+				// Okay as well.
+			} else {
+				c.Errorf("Non-S3 error: %s", err)
+			}
+		} else {
+			c.Errorf("Test should have errored but it seems to have succeeded")
+		}
+	}
+}
+
+func (s *ClientTests) TestRegionsV4(c *C) {
+	// "InvalidAccessKeyId" fails with cn-north-1 and us-gov-west-1
+	errs := make(chan error, len(aws.Regions))
+	for _, region := range aws.Regions {
+		go func(r aws.Region) {
+			s := s3.NewV4(s.s3.Auth, r)
 			b := testBucket(s)
 			_, err := b.Get("non-existent")
 			errs <- err

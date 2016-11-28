@@ -234,8 +234,8 @@ var Regions = map[string]Region{
 	USWest.Name:       USWest,
 	USWest2.Name:      USWest2,
 	SAEast.Name:       SAEast,
-	USGovWest.Name:    USGovWest,
-	CNNorth.Name:      CNNorth,
+	// USGovWest.Name:    USGovWest,
+	// CNNorth.Name:      CNNorth,
 }
 
 type Auth struct {
