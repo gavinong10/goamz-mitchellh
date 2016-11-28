@@ -239,35 +239,30 @@ func (s *ClientTests) TestGetNotFound(c *C) {
 
 // Communicate with all endpoints to see if they are alive.
 func (s *ClientTests) TestRegions(c *C) {
-	// "InvalidAccessKeyId" error currently occurs sporadically:
-	// -> 0 second delay between runs: ap-northeast-1 and ap-southeast-2 error
-	// -> 20 second delay between runs: cn-north-1 and us-gov-west-1 error
+	// "InvalidAccessKeyId" fails with cn-north-1 and us-gov-west-1
 	errs := make(chan error, len(aws.Regions))
+	// myregion := "cn-north-1"
 	for _, region := range aws.Regions {
-		// if region.Name != "cn-north-1" {
-		// 	continue
-		// }
+		if region.Name != myregion {
+			continue
+		}
 		go func(r aws.Region) {
 			s := s3.New(s.s3.Auth, r)
 			b := testBucket(s)
 			_, err := b.Get("non-existent")
 			errs <- err
 		}(region)
-		time.Sleep(10 * time.Second)
 	}
 	for _, region := range aws.Regions {
-		// if region.Name != "cn-north-1" {
+		// if region.Name != myregion {
 		// 	continue
 		// }
 		err := <-errs
+		log.Printf("\n\n\nError for region %s is: %#v", region.Name, err)
 		if err != nil {
 			s3_err, ok := err.(*s3.Error)
 			if ok {
 				check := c.Check(s3_err.Code, Matches, "NoSuchBucket")
-				if !check {
-					log.Println("################################")
-					log.Printf("\nCheck Region Failed: %s\n\n\n", region.Name)
-				}
 			} else if _, ok = err.(*net.DNSError); ok {
 				// Okay as well.
 			} else {
